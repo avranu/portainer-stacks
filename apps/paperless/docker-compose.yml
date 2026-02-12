@@ -1,0 +1,66 @@
+---
+services:
+  redis:
+    image: redis:alpine
+    container_name: paperless-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - paperless-ngx-redis:/data
+
+  db:
+    image: postgres:15-alpine
+    container_name: paperless-db
+    restart: unless-stopped
+    environment:
+      # these are ignored once PGDATA already exists, but harmless
+      - POSTGRES_DB=${PAPERLESS_DB_NAME:-paperless}
+      - POSTGRES_USER=${PAPERLESS_DB_USER:-paperless}
+      - POSTGRES_PASSWORD=${PAPERLESS_DB_PASSWORD:-Resale-Refinance3-Animate}
+    volumes:
+      - ${APP_DIR:-/volumes/containers/paperless-ngx}/postgres/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperless -d paperless"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-ngx
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - PUID=${APP_UID:-568}
+      - PGID=${APP_GID:-568}
+      - TZ=${TZ:-UTC}
+      - PAPERLESS_REDIS=redis://redis:6379
+      - PAPERLESS_DBHOST=db
+      - PAPERLESS_DBNAME=${PAPERLESS_DB_NAME:-paperless}
+      - PAPERLESS_DBUSER=${PAPERLESS_DB_USER:-paperless}
+      - PAPERLESS_DBPASS=${PAPERLESS_DB_PASSWORD:-Resale-Refinance3-Animate}
+      - PAPERLESS_CSRF_TRUSTED_ORIGINS=${PAPERLESS_CSRF_TRUSTED_ORIGINS:-https://paperless.mydomain.com, http://localhost:30070}
+      - PAPERLESS_URL=${PAPERLESS_URL:-https://paperless.mydomain.com}
+      - PAPERLESS_EMAIL_HOST=${PAPERLESS_EMAIL_HOST:-smtp.gmail.com}
+      - PAPERLESS_EMAIL_PORT=${PAPERLESS_EMAIL_PORT:-587}
+      - PAPERLESS_EMAIL_HOST_USER=${PAPERLESS_EMAIL_HOST_USER:-myusername}
+      - PAPERLESS_EMAIL_HOST_PASSWORD=${PAPERLESS_EMAIL_HOST_PASSWORD:-changeme}
+      - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER:-admin}
+      - PAPERLESS_ADMIN_PASSWORD=${PAPERLESS_ADMIN_PASSWORD:-Scary9-Departed-Bronze}
+      - PAPERLESS_ADMIN_EMAIL=${PAPERLESS_ADMIN_EMAIL:-paperless@mydomain.com}
+
+    volumes:
+      - ${APP_DIR:-/volumes/containers/paperless-ngx}/data:/usr/src/paperless/data
+      - ${APP_DIR:-/volumes/containers/paperless-ngx}/media:/usr/src/paperless/media
+      - ${APP_DIR:-/volumes/containers/paperless-ngx}/consume:/usr/src/paperless/consume
+      - ${APP_DIR:-/volumes/containers/paperless-ngx}/trash:/usr/src/paperless/trash
+
+    ports:
+      - "${APP_PORT_PREFIX:-30}080:8000"
+
+volumes:
+  paperless-ngx-redis:

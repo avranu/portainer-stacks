@@ -1,0 +1,24 @@
+---
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    environment:
+      - TZ=${APP_TZ:-UTC}
+      - NODE_ENV=${NODE_ENV:-production}
+    ports:
+      - "${APP_PORT:-22080}:80" # Common port 80 exposed as an uncommon port to avoid collisions
+    volumes:
+      - ${APP_DIR:-/volumes/containers/audiobookshelf/}config:/config
+      - ${APP_DIR:-/volumes/containers/audiobookshelf/}metadata:/metadata
+      - ${STORAGE_DIR:-/storage/media/books/library/}audiobooks:/audiobooks
+      - ${STORAGE_DIR:-/storage/media/books/library/}podcasts:/podcasts
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 80 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s

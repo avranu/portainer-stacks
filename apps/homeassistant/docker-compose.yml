@@ -1,0 +1,19 @@
+---
+services:
+  homeassistant:
+    image: "ghcr.io/home-assistant/home-assistant:stable"
+    container_name: homeassistant
+    hostname: homeassistant
+    privileged: true
+    environment:
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${APP_PORT_PREFIX:-16}780:8123"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/homeassistant}/config:/config
+      - /etc/localtime:/etc/localtime:ro
+      - /run/dbus:/run/dbus:ro
+    restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 9.9.9.9

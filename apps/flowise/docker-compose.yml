@@ -1,0 +1,56 @@
+---
+services:
+  flowise-db:
+    image: postgres:16-alpine
+    container_name: flowise_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-flowise}
+      POSTGRES_USER: ${POSTGRES_USER:-flowise}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Implode6-Saloon-Recess}
+    volumes:
+      - ${APP_DIR:-/volumes/containers/flowise}/pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  flowise:
+    image: flowiseai/flowise:latest
+    container_name: flowise_app
+    depends_on:
+      flowise-db:
+        condition: service_healthy
+    # map some uncommon host port, e.g. 5023 → container’s port
+    ports:
+      - "${APP_PORT_PREFIX:-36}300:3000"
+    volumes:
+      # persist the Flowise data (configs, logs, etc.)
+      - ${APP_DIR:-/volumes/containers/flowise}/data:/root/.flowise
+    environment:
+      DEBUG: "false"
+      PORT: "3000"
+      FLOWISE_USERNAME: ${FLOWISE_USERNAME:-admin}
+      FLOWISE_PASSWORD: ${FLOWISE_PASSWORD:-Cardboard-Shoplift-Backstage7}
+      APIKEY_PATH: /root/.flowise
+      SECRETKEY_PATH: /root/.flowise
+      LOG_LEVEL: info
+      LOG_PATH: /root/.flowise/logs
+      DATABASE_TYPE: postgres
+      DATABASE_HOST: flowise-db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-flowise}
+      DATABASE_USER: ${POSTGRES_USER:-flowise}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-Implode6-Saloon-Recess}
+    restart: on-failure:5
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  default:
+    name: flowise_network

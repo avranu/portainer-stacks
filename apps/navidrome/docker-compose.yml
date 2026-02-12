@@ -1,0 +1,26 @@
+---
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    ports:
+      - "${APP_PORT_PREFIX:-35}533:4533" # map external port 35533 to internal 4533
+    restart: unless-stopped
+    environment:
+      ND_MUSICFOLDER: /music
+      ND_DATAFOLDER: /data
+      # Optional environment variables you may want:
+      # ND_LOGLEVEL: info
+      # ND_SCANINTERVAL: 1h
+      # ND_SESSIONTIMEOUT: 24h
+      ND_BASEURL: "https://music.mydomain.com"
+      # See: https://www.navidrome.org/docs/usage/external-integrations/
+      ND_LASTFM_ENABLED: "true"
+      ND_LASTFM_APIKEY: ${LASTFM_APIKEY}
+      ND_LASTFM_SECRET: ${LASTFM_SECRET}
+      ND_SPOTIFY_ENABLED: "true"
+      ND_SPOTIFY_ID: ${SPOTIFY_ID}
+      ND_SPOTIFY_SECRET: ${SPOTIFY_SECRET}
+    volumes:
+      - ${APP_DIR:-/volumes/containers/navidrome}/data:/data
+      - ${STORAGE_DIR:-/storage/media/music/library}:/music:ro

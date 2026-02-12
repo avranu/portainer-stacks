@@ -1,0 +1,48 @@
+---
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: open-webui
+    restart: unless-stopped
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-64g}
+
+    ports:
+      - "${APP_PORT_PREFIX:-26}080:8080" # uncommon, safe for reverse proxy
+
+    environment:
+      # --- Core ---
+      WEBUI_NAME: "${WEBUI_NAME:-Open WebUI}"
+      WEBUI_AUTH: "true"
+
+      # --- OpenAI / GPT-5 ---
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      OPENAI_API_BASE_URL: "https://api.openai.com/v1"
+      OPENAI_API_MODEL_DEFAULT: "${OPENAI_API_MODEL_DEFAULT:-gpt-5.2}"
+
+      # --- Optional: allow both OpenAI + Ollama ---
+      ENABLE_OLLAMA_API: "true"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+
+      # --- Projects / Integrations ---
+      ENABLE_RAG_WEB_SEARCH: "true"
+      ENABLE_CODE_INTERPRETER: "true"
+
+    volumes:
+      - ${APP_DIR:-/volumes/containers/openwebui}/data:/app/backend/data
+
+    depends_on:
+      - ollama
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-64g}
+
+    ports:
+      - "${APP_PORT_PREFIX:-26}434:11434" # mapped but not required externally
+
+    volumes:
+      - ${APP_DIR:-/volumes/containers/openwebui}/ollama/data:/root/.ollama

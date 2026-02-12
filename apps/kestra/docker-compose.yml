@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: kestra_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-kestra}"
+      POSTGRES_USER: "${POSTGRES_USER:-kestra}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-Affront2-Opal-Rocklike}"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/kestra}/postgres/data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d kestra -U kestra"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    ports:
+      - "${APP_PORT_PREFIX:-13}432:5432"
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-16g}
+
+  kestra:
+    image: kestra/kestra:latest
+    container_name: kestra_server
+    restart: unless-stopped
+    entrypoint: /bin/bash
+    command: -c "/app/kestra server standalone --worker-thread=128"
+    user: "root"
+    env_file:
+      - stack.env
+    environment:
+      ENV_GOTIFY_URL: "${ENV_GOTIFY_URL:-}"
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://postgres:5432/kestra
+            driverClassName: org.postgresql.Driver
+            username: "${POSTGRES_USER:-kestra}"
+            password: "${POSTGRES_PASSWORD:-Affront2-Opal-Rocklike}"
+        kestra:
+          server:
+            basic-auth:
+              enabled: true
+              username: "${KESTRA_ADMIN_EMAIL:-kestra@mydomain.com}"
+              password: "${KESTRA_ADMIN_PASSWORD:-Glory-Imposing1-Refocus}"
+            url: "${KESTRA_ADMIN_URL:-}"
+          tutorialFlows:
+            enabled: false
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              base-path: "/app/storage"
+          queue:
+            type: postgres
+          tasks:
+            tmp-dir:
+              path: /tmp/kestra-wd/tmp
+    volumes:
+      - ${APP_DIR:-/volumes/containers/kestra}/data:/app/storage
+      - ${APP_DIR:-/volumes/containers/kestra}/cache:/tmp/kestra-wd
+      - ${APP_DIR:-/volumes/containers/kestra}/secrets/ssh:/root/.ssh
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "${APP_PORT_PREFIX:-13}080:8080"
+      - "${APP_PORT_PREFIX:-13}081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-16g}

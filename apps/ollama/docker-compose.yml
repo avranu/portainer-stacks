@@ -1,0 +1,11 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "${APP_PORT_PREFIX:-11}434:11434"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/ollama}:/root/.ollama
+    restart: unless-stopped
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-64g}

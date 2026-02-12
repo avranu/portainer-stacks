@@ -1,0 +1,35 @@
+---
+services:
+  jdownloader:
+    image: jlesage/jdownloader-2:latest
+    container_name: jdownloader
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT_PREFIX:-32}580:5800" # Web UI (mapped to uncommon port)
+      - "${APP_PORT_PREFIX:-32}590:5900" # VNC (optional; uncommon port)
+      - "${APP_PORT_PREFIX:-32}129:3129" # MyJDownloader Direct Connection (optional)
+      # This was attempted, but I couldn't make it work.
+      #- "${APP_PORT_PREFIX:-32}966:9666" # ← FlashGot / Click'n'Load local API
+    environment:
+      - USER_ID=${APP_UID:-568}
+      - GROUP_ID=${APP_GID:-568}
+      - TZ=${TZ:-UTC}
+      # UI/UX
+      - DISPLAY_WIDTH=1920
+      - DISPLAY_HEIGHT=1080
+      - DARK_MODE=1
+      # Security: enable HTTPS and require web login
+      - SECURE_CONNECTION=1
+      - WEB_AUTHENTICATION=1
+      - WEB_AUTHENTICATION_USERNAME=${JD_WEB_USERNAME:-admin}
+      - WEB_AUTHENTICATION_PASSWORD=${JD_WEB_PASSWORD:-Daycare-Extending2-Backache}
+      # Optional: lightweight web file manager inside the container UI
+      - WEB_FILE_MANAGER=1
+      - WEB_FILE_MANAGER_ALLOWED_PATHS=AUTO
+      # Optional: set your MyJDownloader email here, or link via the GUI later.
+      # - MYJDOWNLOADER_EMAIL=jdownloader@mydomain.com
+    volumes:
+      - ${APP_DIR:-/volumes/containers/jdownloader}/config:/config:rw # App config, logs, state
+      - ${STORAGE_DIR:-/storage/media/downloads}:/output:rw # Where downloads are written
+    # If you want nicer CPU scheduling, uncomment the next line:
+    cap_add: ["SYS_NICE"]

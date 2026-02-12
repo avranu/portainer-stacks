@@ -1,0 +1,27 @@
+---
+# NOTE: SSL does not appear to work with this config. Not sure why.
+services:
+  gotify:
+    image: gotify/server
+    container_name: gotify
+    environment:
+      GOTIFY_DEFAULTUSER_NAME: "${APP_USERNAME:-admin}"
+      GOTIFY_DEFAULTUSER_PASS: "${APP_PASSWORD:-Streak-Exemption4-Subplot}"
+      GOTIFY_SERVER_SSL_ENABLED: "true"
+      GOTIFY_SERVER_SSL_REDIRECTTOHTTPS: "false"
+      GOTIFY_SERVER_SSL_LETSENCRYPT_ENABLED: "true"
+      GOTIFY_SERVER_SSL_LETSENCRYPT_ACCEPTTOS: "true"
+      GOTIFY_SERVER_SSL_LETSENCRYPT_CACHE: certs
+      GOTIFY_SERVER_SSL_LETSENCRYPT_HOSTS: |
+        - ${GOTIFY_HOST:-gotify.mydomain.com}
+      GOTIFY_UPLOADEDIMAGESDIR: data/images
+      GOTIFY_PLUGINSDIR: data/plugins
+      GOTIFY_REGISTRATION: "false"
+    ports:
+      - "${APP_PORT_PREFIX:-11}080:80"
+    user: "568:568"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/gotify}/data:/app/data
+    restart: unless-stopped
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-8g}

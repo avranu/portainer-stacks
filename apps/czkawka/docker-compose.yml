@@ -1,0 +1,22 @@
+---
+services:
+  czkawka:
+    image: jlesage/czkawka
+    container_name: czkawka
+    ports:
+      - "${APP_PORT_PREFIX:-41}080:5800"
+    volumes:
+      - ${APP_DIR:-/volumes/containers}/czkawka/config:/config:rw
+      - ${USER_DIR:-/users/storage}:/storage/users:rw
+      - ${STORAGE_DIR:-/storage/media}:/storage/media
+    environment:
+      - DARK_MODE=1
+      - WEB_AUTHENTICATION=1
+      - WEB_AUTHENTICATION_USERNAME="${ADMIN_USER}"
+      - WEB_AUTHENTICATION_PASSWORD="${ADMIN_PASSWORD}"
+      - SECURE_CONNECTION=1
+      - WEB_NOTIFICATION=1
+      - GROUP_ID=${APP_GID:-568}
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 32g
