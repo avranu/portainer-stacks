@@ -1,0 +1,42 @@
+---
+services:
+  postgres:
+    image: postgres:17.5
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${PG_USER:-PokerVagrancy}"
+      POSTGRES_PASSWORD: "${PG_PASS:-Annually-Juncture3-Argue}"
+      POSTGRES_DB: "${PG_DB:-appdb}"
+      PGDATA: "/var/lib/postgresql/data/pgdata"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/postgres}/db/data:/var/lib/postgresql/data
+    ports:
+      - "${APP_PORT_PREFIX:-12}543:5432"
+    networks:
+      - public
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-PokerVagrancy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_EMAIL:-postgres@mydomain.com}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_PASS:-Geology-Applause-Mobilize1}"
+    ports:
+      - "${APP_PORT_PREFIX:-12}080:80"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/postgres}/admin/data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - public
+
+networks:
+  public:
+    driver: bridge

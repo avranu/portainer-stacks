@@ -1,0 +1,73 @@
+---
+services:
+  wazuh-indexer:
+    image: wazuh/wazuh-indexer:4.8.2
+    container_name: wazuh-indexer
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=-Xms2g -Xmx2g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - wazuh_indexer:/usr/share/opensearch/data
+    ports:
+      - "${APP_PORT_PREFIX:-55}920:9200"
+    networks:
+      - wazuh
+
+  wazuh-manager:
+    image: wazuh/wazuh-manager:4.8.2
+    container_name: wazuh-manager
+    restart: unless-stopped
+    depends_on:
+      - wazuh-indexer
+    environment:
+      - INDEXER_URL=https://wazuh-indexer:9200
+      - INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME:-admin}
+      - INDEXER_PASSWORD=${WAZUH_INDEXER_PASSWORD:-Waving6-Halogen-Mutable}
+      - FILEBEAT_SSL_VERIFICATION_MODE=none
+      - API_USERNAME=${WAZUH_API_USERNAME:-wazuh}
+      - API_PASSWORD=${WAZUH_API_PASSWORD:-Rigid-Visible9-Earflap}
+    ports:
+      - "${APP_PORT_PREFIX:-55}154:1514/udp"
+      - "${APP_PORT_PREFIX:-55}155:1515"
+      - "${APP_PORT_PREFIX:-55}500:55000"
+    volumes:
+      - wazuh_manager:/var/ossec/data
+      - wazuh_api:/var/ossec/api/configuration
+    networks:
+      - wazuh
+
+  wazuh-dashboard:
+    image: wazuh/wazuh-dashboard:4.8.2
+    container_name: wazuh-dashboard
+    restart: unless-stopped
+    depends_on:
+      - wazuh-indexer
+      - wazuh-manager
+    environment:
+      - DASHBOARD_USERNAME=${WAZUH_DASHBOARD_USERNAME:-admin}
+      - DASHBOARD_PASSWORD=${WAZUH_DASHBOARD_PASSWORD:-Recluse3-Underfoot-Cope}
+      - INDEXER_USERNAME=${WAZUH_INDEXER_USERNAME:-admin}
+      - INDEXER_PASSWORD=${WAZUH_INDEXER_PASSWORD:-Waving6-Halogen-Mutable}
+      - API_USERNAME=${WAZUH_API_USERNAME:-wazuh}
+      - API_PASSWORD=${WAZUH_API_PASSWORD:-Rigid-Visible9-Earflap}
+      - API_URL=https://wazuh-manager:55000
+      - DASHBOARD_SSL_ENABLE=false
+    ports:
+      - "${APP_PORT_PREFIX:-55}601:5601"
+    networks:
+      - wazuh
+
+networks:
+  wazuh:
+    driver: bridge
+
+volumes:
+  wazuh_indexer:
+  wazuh_manager:
+  wazuh_api:

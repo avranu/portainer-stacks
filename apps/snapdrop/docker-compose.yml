@@ -1,0 +1,12 @@
+---
+services:
+  snapdrop:
+    image: seji/snapdrop-docker:latest
+    container_name: snapdrop
+    environment:
+      - TZ=${TZ:-UTC}
+    ports:
+      - "${APP_PORT_PREFIX:-16}080:80"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/snapdrop}/config:/config
+    restart: unless-stopped

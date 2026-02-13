@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: semaphore_postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-semaphore}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Doing-Clapping-Matchbook3}
+      POSTGRES_DB: ${DB_NAME:-semaphore}
+    volumes:
+      - ${APP_DIR:-/volumes/containers/semaphore}/postgres/data:/var/lib/postgresql/data
+    restart: unless-stopped
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-8g}
+
+  semaphore:
+    image: semaphoreui/semaphore:latest
+    container_name: semaphore
+    ports:
+      - "${APP_PORT_PREFIX:-14}080:3000"
+    environment:
+      SEMAPHORE_DB_DIALECT: postgres
+      SEMAPHORE_DB_HOST: postgres
+      SEMAPHORE_DB_PORT: 5432
+      SEMAPHORE_DB_USER: ${DB_USER:-semaphore}
+      SEMAPHORE_DB_PASS: ${DB_PASSWORD:-Doing-Clapping-Matchbook3}
+      SEMAPHORE_DB: ${DB_NAME:-semaphore}
+      SEMAPHORE_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Retail1-Grievous-Spill}
+      SEMAPHORE_ADMIN_NAME: ${ADMIN_NAME:-admin}
+      SEMAPHORE_ADMIN_EMAIL: ${ADMIN_EMAIL:-ansible@mydomain.com}
+      SEMAPHORE_ADMIN: ${ADMIN_USERNAME:-admin}
+      SEMAPHORE_ACCESS_KEY_ENCRYPTION: ${ACCESS_KEY_ENCRYPTION:-nPNjQqDZ8o7oYPJvCJYh1hj9n8uWUoNqkS4oIDBgk67KQPM4DsxpH9k0Fgzi96aK}
+      TZ: ${TZ:-UTC}
+    depends_on:
+      - postgres
+    volumes:
+      - ${APP_DIR:-/volumes/containers/semaphore}/playbooks:/playbooks
+      - ${APP_DIR:-/volumes/containers/semaphore}/data:/etc/semaphore
+    restart: always
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-8g}
