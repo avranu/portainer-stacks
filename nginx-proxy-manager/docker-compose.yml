@@ -1,7 +1,7 @@
 ---
 services:
   nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:2.11.3
+    image: "jc21/nginx-proxy-manager:latest"
     container_name: nginx-proxy-manager
     restart: unless-stopped
     ports:
@@ -12,7 +12,7 @@ services:
       - TZ=${TZ:-UTC}
     volumes:
       - ${APP_DIR:-/volumes/containers/nginx-proxy-manager}/data:/data
-      - ${APP_DIR:-/volumes/containers/nginx-proxy-manager}/letsencrypt:/etc/letsencrypt
+      - ${APP_DIR:-/volumes/containers/nginx-proxy-manager}/certs:/etc/letsencrypt
     networks:
       - nginx-proxy-manager
 
