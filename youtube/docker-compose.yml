@@ -1,0 +1,77 @@
+---
+# See here: https://docs.tubearchivist.com/installation/docker-compose/
+services:
+  youtube-frontend:
+    image: bbilly1/tubearchivist:latest
+    container_name: youtube-frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT_PREFIX:-16}800:8000"
+    volumes:
+      - ${APP_DIR:-/volumes/containers/tubearchivist}/cache:/cache
+      - ${STORAGE_DIR:-/storage/media/videos/youtube}:/youtube
+    environment:
+      - ES_URL=http://youtube-es:9200
+      - REDIS_CON=redis://youtube-redis:6379
+      - HOST_UID=${APP_UID:-568}
+      - HOST_GID=${APP_GID:-568}
+      - TA_HOST=${TA_HOST:-localhost}
+      - TA_USERNAME=${TA_USERNAME:-admin}
+      - TA_PASSWORD=${TA_PASSWORD:-Scarlet-Turnip7-Javelin}
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-Bonfire-Gust4-Paprika}
+      - TZ=${APP_TZ:-UTC}
+    depends_on:
+      youtube-es:
+        condition: service_healthy
+      youtube-redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/health/"]
+      interval: 2m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  youtube-redis:
+    image: redis/redis-stack-server:latest
+    container_name: youtube-redis
+    restart: unless-stopped
+    volumes:
+      - ${APP_DIR:-/volumes/containers/tubearchivist}/redis:/data
+    depends_on:
+      youtube-es:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  youtube-es:
+    image: bbilly1/tubearchivist-es:latest
+    container_name: youtube-es
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-Bonfire-Gust4-Paprika}
+      - xpack.security.enabled=true
+      - path.repo=/usr/share/elasticsearch/data/snapshot
+    volumes:
+      - ${APP_DIR:-/volumes/containers/tubearchivist}/es:/usr/share/elasticsearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf -u elastic:${ELASTIC_PASSWORD:-Bonfire-Gust4-Paprika} http://localhost:9200/_cluster/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
