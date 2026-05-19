@@ -6,7 +6,7 @@ services:
     restart: unless-stopped
     command: redis-server --save 60 1 --loglevel warning
     volumes:
-      - paperless-ngx-redis:/data
+      - paperless-redis:/data
 
   db:
     image: postgres:15-alpine
@@ -18,16 +18,16 @@ services:
       - POSTGRES_USER=${PAPERLESS_DB_USER:-paperless}
       - POSTGRES_PASSWORD=${PAPERLESS_DB_PASSWORD:-Resale-Refinance3-Animate}
     volumes:
-      - ${APP_DIR:-/volumes/containers/paperless-ngx}/postgres/data:/var/lib/postgresql/data
+      - ${APP_DIR:-/volumes/containers/paperless}/postgres/data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U paperless -d paperless"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  paperless-ngx:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
-    container_name: paperless-ngx
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:beta
+    container_name: paperless
     restart: unless-stopped
     depends_on:
       db:
@@ -37,8 +37,11 @@ services:
     environment:
       - PUID=${APP_UID:-568}
       - PGID=${APP_GID:-568}
+      - PAPERLESS_USERMAP_UID=${APP_UID:-568}
+      - PAPERLESS_USERMAP_GID=${APP_GID:-568}
       - TZ=${TZ:-UTC}
       - PAPERLESS_REDIS=redis://redis:6379
+      - PAPERLESS_DBENGINE=postgresql
       - PAPERLESS_DBHOST=db
       - PAPERLESS_DBNAME=${PAPERLESS_DB_NAME:-paperless}
       - PAPERLESS_DBUSER=${PAPERLESS_DB_USER:-paperless}
@@ -52,15 +55,16 @@ services:
       - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER:-admin}
       - PAPERLESS_ADMIN_PASSWORD=${PAPERLESS_ADMIN_PASSWORD:-Scary9-Departed-Bronze}
       - PAPERLESS_ADMIN_EMAIL=${PAPERLESS_ADMIN_EMAIL:-paperless@mydomain.com}
+      - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY:-mLkybLN57z-TjxI4WwgYMpyUfEdOZlw0LHmVLBdgoGWkWBjBJIyUVEqviBgGyuSgtVLXm5KktmgC8UG_9MZN4Q}
 
     volumes:
-      - ${APP_DIR:-/volumes/containers/paperless-ngx}/data:/usr/src/paperless/data
-      - ${APP_DIR:-/volumes/containers/paperless-ngx}/media:/usr/src/paperless/media
-      - ${APP_DIR:-/volumes/containers/paperless-ngx}/consume:/usr/src/paperless/consume
-      - ${APP_DIR:-/volumes/containers/paperless-ngx}/trash:/usr/src/paperless/trash
+      - ${APP_DIR:-/volumes/containers/paperless}/data:/usr/src/paperless/data
+      - ${APP_DIR:-/volumes/containers/paperless}/media:/usr/src/paperless/media
+      - ${APP_DIR:-/volumes/containers/paperless}/consume:/usr/src/paperless/consume
+      - ${APP_DIR:-/volumes/containers/paperless}/trash:/usr/src/paperless/trash
 
     ports:
-      - "${APP_PORT_PREFIX:-30}080:8000"
+      - "${APP_PORT_PREFIX:-300}70:8000"
 
 volumes:
-  paperless-ngx-redis:
+  paperless-redis:
