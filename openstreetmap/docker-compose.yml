@@ -25,10 +25,21 @@ services:
       # Area generation: 1 (low RAM) .. 100. Higher = faster area rebuilds.
       - OVERPASS_RULES_LOAD=${OVERPASS_RULES_LOAD:-10}
       - OVERPASS_FASTCGI_PROCESSES=${OVERPASS_FASTCGI_PROCESSES:-4}
-      - OVERPASS_MAX_TIMEOUT=${OVERPASS_MAX_TIMEOUT:-1000}
+      # CEILING ONLY - this is not a per-query limit. In this image it does
+      # exactly one thing: templates nginx's fastcgi_read/send_timeout. Per-query
+      # limits come from [timeout:N] in the query itself. Any reverse proxy in
+      # front must have proxy_read_timeout >= this value or it will 504 first.
+      - OVERPASS_MAX_TIMEOUT=${OVERPASS_MAX_TIMEOUT:-660}
+      # Dispatcher-side quotas (blank = upstream defaults). These bound what a
+      # client may ask for via [timeout:N] / [maxsize:N].
+      - OVERPASS_TIME=${OVERPASS_TIME:-}
+      # Max RAM per query, in bytes. Keep well under mem_limit.
+      - OVERPASS_SPACE=${OVERPASS_SPACE:-}
+      # Max concurrent queries per client IP.
+      - OVERPASS_RATE_LIMIT=${OVERPASS_RATE_LIMIT:-}
     volumes:
       - ${APP_DIR:-/volumes/containers/openstreetmap}/db:/db
     ports:
-      - "${APP_PORT_PREFIX:-218}90:80"
+      - "${APP_PORT_PREFIX:-2189}0:80"
     cpus: ${CPU_LIMIT:-4}
     mem_limit: ${MEM_LIMIT:-16g}
