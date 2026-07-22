@@ -1,0 +1,34 @@
+---
+services:
+  overpass:
+    image: wiktorn/overpass-api:latest
+    container_name: overpass
+    restart: unless-stopped
+    environment:
+      # init  = build the DB from a planet/extract file (OVERPASS_PLANET_URL)
+      # clone = download a prebuilt DB from OVERPASS_CLONE_SOURCE (full planet, huge)
+      - OVERPASS_MODE=${OVERPASS_MODE:-clone}
+      # clone source: prebuilt full-planet DB. Default uses minute diffs and
+      # is meta=no (no attic). Change it for a meta/attic/area variant.
+      - OVERPASS_CLONE_SOURCE=${OVERPASS_CLONE_SOURCE:-https://dev.overpass-api.de/api_drolbr/}
+      # PLANET_URL is init-mode only; ignored when cloning.
+      - OVERPASS_PLANET_URL=${OVERPASS_PLANET_URL:-}
+      # Ongoing updates for a full-planet clone come from OSM global minute
+      # replication, NOT a regional Geofabrik dir. Leave blank for a static snapshot.
+      - OVERPASS_DIFF_URL=${OVERPASS_DIFF_URL:-https://planet.openstreetmap.org/replication/minute/}
+      # Metadata: no | yes (attic-less meta) | attic (full history, larger DB)
+      - OVERPASS_META=${OVERPASS_META:-no}
+      # Compression for the DB on disk: no | gz | lz4
+      - OVERPASS_COMPRESSION=${OVERPASS_COMPRESSION:-gz}
+      # Seconds to sleep between diff updates. Empty disables auto-updates.
+      - OVERPASS_UPDATE_SLEEP=${OVERPASS_UPDATE_SLEEP:-3600}
+      # Area generation: 1 (low RAM) .. 100. Higher = faster area rebuilds.
+      - OVERPASS_RULES_LOAD=${OVERPASS_RULES_LOAD:-10}
+      - OVERPASS_FASTCGI_PROCESSES=${OVERPASS_FASTCGI_PROCESSES:-4}
+      - OVERPASS_MAX_TIMEOUT=${OVERPASS_MAX_TIMEOUT:-1000}
+    volumes:
+      - ${APP_DIR:-/volumes/containers/openstreetmap}/db:/db
+    ports:
+      - "${APP_PORT_PREFIX:-218}90:80"
+    cpus: ${CPU_LIMIT:-4}
+    mem_limit: ${MEM_LIMIT:-16g}

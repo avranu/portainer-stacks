@@ -1,0 +1,31 @@
+---
+services:
+  searxng-valkey:
+    image: docker.io/valkey/valkey:8-alpine
+    container_name: searxng-valkey
+    command: valkey-server --save "" --appendonly "no" --maxmemory 128mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    volumes:
+      - searxng-valkey-data:/data
+
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    depends_on:
+      - searxng-valkey
+    environment:
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL:-https://search.mydomain.com/}
+      - SEARXNG_REDIS_URL=redis://searxng-valkey:6379/0
+      - SEARXNG_SECRET=${SEARXNG_SECRET}
+      - UWSGI_WORKERS=${UWSGI_WORKERS:-4}
+      - UWSGI_THREADS=${UWSGI_THREADS:-4}
+    volumes:
+      - ${APP_DIR:-/volumes/containers/searxng}/config:/etc/searxng
+    ports:
+      - "${APP_PORT_PREFIX:-250}80:8080"
+    cpus: ${CPU_LIMIT:-1}
+    mem_limit: ${MEM_LIMIT:-2g}
+
+volumes:
+  searxng-valkey-data:
